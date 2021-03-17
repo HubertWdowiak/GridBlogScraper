@@ -1,0 +1,6 @@
+/tutorial/url.json
+*.json
+/venv
+scrapy.cfg
+*.xml
+*.iml
