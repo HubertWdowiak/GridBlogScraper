@@ -7,6 +7,21 @@ import numpy as np
 import matplotlib.dates as mdates
 
 
+def read_json_from_file(filename: str) -> list or dict:
+    """Reads data from json file."""
+    try:
+        with open(filename) as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def save_json_to_file(data: list or dict, filename: str):
+    """Saves data to json file."""
+    with open(filename, 'w') as file:
+        json.dump(data, file)
+
+
 def get_last_date() -> datetime:
     """
     Reads data from 'articles.json' and returns date of most recent article
@@ -14,12 +29,11 @@ def get_last_date() -> datetime:
     """
 
     try:
-        with open('articles.json', 'r') as file:
-            articles = json.load(file)
-            dates = sorted([article['date'] for article in articles], reverse=True)
-            return dates[0]
+        articles = read_json_from_file('articles.json')
+        dates = sorted([article['date'] for article in articles], reverse=True)
+        return dates[0]
 
-    except (json.decoder.JSONDecodeError, KeyError, FileNotFoundError):
+    except (json.decoder.JSONDecodeError, KeyError, FileNotFoundError, IndexError):
         return datetime.strptime('2000-01-01', '%Y-%m-%d')
 
 
@@ -34,10 +48,12 @@ def scrap_new_urls(last_date: datetime) -> list[str]:
                         "-O", "../url.json"], cwd='tutorial')
 
     if return_code == 0:
-        with open('url.json', 'r') as file:
-            all_scraped_urls = json.load(file)
-        os.remove('url.json')
 
+        all_scraped_urls = read_json_from_file('url.json')
+        try:
+            os.remove('url.json')
+        except FileNotFoundError:
+            pass
         new_urls = []
         for urls in all_scraped_urls:
             new_urls.extend(next(iter((urls.values()))))
@@ -60,9 +76,12 @@ def scrap_articles_from_urls(new_urls: list[str]) -> list:
                  '-a', f'start_urls={new_urls}',
                  '-O', '../new_articles.json'],
                 cwd='tutorial'):
-        with open('new_articles.json', 'r') as file:
-            return json.load(file)
-
+        new_articles = read_json_from_file('new_articles.json')
+        try:
+            os.remove('new_articles.json')
+        except FileNotFoundError:
+            pass
+        return new_articles
     return []
 
 
@@ -72,26 +91,12 @@ def update_articles(new_articles: list):
     """
     if new_articles:
         try:
-            with open('articles.json', 'r') as file:
-                all_articles = json.load(file) + new_articles
-        except (json.JSONDecodeError, FileNotFoundError, TypeError) as e:
+            all_articles = read_json_from_file('articles.json') + new_articles
+        except (json.JSONDecodeError, FileNotFoundError, TypeError):
             all_articles = new_articles
 
-        with open('articles.json', 'w') as file:
-            json.dump(all_articles, file)
-    try:
-        os.remove('new_articles.json')
-    except FileNotFoundError:
-        pass
-
-
-def get_authors() -> list:
-    """Returns a list of already known authors, who are stored in authors.json"""
-    try:
-        with open('authors.json', 'r') as file:
-            return json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
+        save_json_to_file(all_articles, 'articles.json')
+        return all_articles
 
 
 def get_urls_of_new_authors(new_articles: list) -> list:
@@ -100,7 +105,7 @@ def get_urls_of_new_authors(new_articles: list) -> list:
     to names already saved in authors.json. Returns a list of urls of pages
     which describe authors, who are missing in authors.json file.
     """
-    authors = get_authors()
+    authors = read_json_from_file('authors.json')
     authors_names = [author['name'] for author in authors]
     new_authors_urls = []
     for article in new_articles:
@@ -119,7 +124,7 @@ def update_old_authors(new_articles: list):
     to names already saved in authors.json. Updates article-counters for authors
     that are in authors.json.
     """
-    authors = get_authors()
+    authors = read_json_from_file('authors.json')
     authors_names = [author['name'] for author in authors]
 
     for article in new_articles:
@@ -130,8 +135,8 @@ def update_old_authors(new_articles: list):
                     if author['name'] == name:
                         author['articles'] += 1
 
-    with open('authors.json', 'w') as file:
-        json.dump(authors, file)
+    save_json_to_file(authors, 'authors.json')
+    return authors
 
 
 def update_authors(new_articles: list):
@@ -148,17 +153,16 @@ def update_authors(new_articles: list):
                  '-O', '../new_authors.json'],
                 cwd='tutorial'):
 
-        authors = get_authors()
-        with open('new_authors.json', 'r') as file:
-            try:
-                new_authors = json.load(file)
-            except json.JSONDecodeError:
-                new_authors = None
-            if new_authors:
-                authors += new_authors
-        os.remove('new_authors.json')
-        with open('authors.json', 'w') as file:
-            json.dump(authors, file)
+        authors = read_json_from_file('authors.json')
+
+        new_authors = read_json_from_file('new_authors.json')
+        if new_authors:
+            authors += new_authors
+        try:
+            os.remove('new_authors.json')
+        except FileNotFoundError:
+            pass
+        save_json_to_file(authors, 'authors.json')
 
 
 def prepare_timeline(ax, names, dates):
@@ -171,7 +175,6 @@ def prepare_timeline(ax, names, dates):
     dates = [datetime.strptime(d, "%Y-%m-%d %H:%M:%S") for d in dates]
 
     ax.set_title("5 most recent articles", fontsize=20)
-
     ax.vlines(dates, 0, levels, color="tab:red")
     ax.plot(dates, np.zeros_like(dates), "-o",
             color="k", markerfacecolor="w")

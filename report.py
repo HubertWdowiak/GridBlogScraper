@@ -1,9 +1,8 @@
 from utils import get_last_date, scrap_new_urls, scrap_articles_from_urls, \
-    update_articles, update_authors, prepare_timeline
+    update_articles, update_authors, prepare_timeline, read_json_from_file
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import json
 import itertools
 
 
@@ -37,11 +36,9 @@ def create_report():
 
     Third subplot shows a timeline with 5 most recent articles placed on it.
     """
-    with open('authors.json') as file:
-        authors = json.load(file)
 
-    with open('articles.json') as file:
-        articles = json.load(file)
+    authors = read_json_from_file('authors.json')
+    articles = read_json_from_file('articles.json')
 
     articles_df = pd.DataFrame(articles)
     recent_articles = articles_df.sort_values('date', ascending=False)[:5]
