@@ -4,3 +4,4 @@
 scrapy.cfg
 *.xml
 *.iml
+.idea
