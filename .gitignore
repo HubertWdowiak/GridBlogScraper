@@ -1,4 +1,4 @@
-/tutorial/url.json
+/blogscraper/url.json
 *.json
 /venv
 scrapy.cfg

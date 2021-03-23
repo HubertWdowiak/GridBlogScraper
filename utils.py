@@ -48,7 +48,7 @@ def scrap_new_urls(last_date: datetime) -> list[str]:
     """
     return_code = call(["scrapy", "crawl", "urls",
                         "-a", f"last_date={last_date}",
-                        "-O", "../url.json"], cwd='tutorial')
+                        "-O", "../url.json"], cwd='blogscraper')
 
     if return_code == 0:
 
@@ -78,7 +78,7 @@ def scrap_articles_from_urls(new_urls: list[str]) -> list:
     if not call(['scrapy', 'crawl', 'articles',
                  '-a', f'start_urls={new_urls}',
                  '-O', '../new_articles.json'],
-                cwd='tutorial'):
+                cwd='blogscraper'):
         new_articles = read_json_from_file('new_articles.json')
         try:
             os.remove('new_articles.json')
@@ -154,7 +154,7 @@ def update_authors(new_articles: list):
     if not call(['scrapy', 'crawl', 'authors',
                  '-a', f'start_urls={urls_of_new_authors}',
                  '-O', '../new_authors.json'],
-                cwd='tutorial'):
+                cwd='blogscraper'):
 
         authors = read_json_from_file('authors.json')
         new_authors = read_json_from_file('new_authors.json')
