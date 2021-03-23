@@ -71,7 +71,7 @@ def create_report():
         for spine in ["left", "top", "right"]:
             ax.spines[spine].set_visible(False)
 
-    plt.show()
+    plt.savefig('report.jpg', dpi=200)
 
 
 if __name__ == '__main__':
