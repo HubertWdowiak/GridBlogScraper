@@ -2,6 +2,8 @@ from datetime import datetime
 
 import scrapy
 import ast
+import logging
+from ..scrapy_logger_utils import set_scrapy_logger
 
 
 class ArticleSpider(scrapy.Spider):
@@ -23,6 +25,7 @@ class ArticleSpider(scrapy.Spider):
         super().__init__(**kwargs)
         x = ast.literal_eval(kwargs.pop('start_urls'))
         self.start_urls = x
+        set_scrapy_logger(logging.WARNING)
 
     def parse(self, response, **kwargs):
         if 'author' in response.url:
@@ -44,6 +47,8 @@ class ArticleSpider(scrapy.Spider):
 
             authors = [(author, url) for author, url in zip(raw_authors, authors_urls)]
             tags = response.css('.post-tags > a::text').getall()
+
+            logging.info(f"Scraped article: {title}")
 
             yield {
                 'title': title,

@@ -5,6 +5,9 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.dates as mdates
+import logging
+
+utils_logger = logging.getLogger('utils')
 
 
 def read_json_from_file(filename: str) -> list or dict:
@@ -27,13 +30,14 @@ def get_last_date() -> datetime:
     Reads data from 'articles.json' and returns date of most recent article
     within it, as a datetime. If the file does not exist, returns '2000-01-01'.
     """
-
     try:
         articles = read_json_from_file('articles.json')
         dates = sorted([article['date'] for article in articles], reverse=True)
-        return dates[0]
-
+        last_date = dates[0]
+        utils_logger.info(f'Found date of last article: {last_date}')
+        return last_date
     except (json.decoder.JSONDecodeError, KeyError, FileNotFoundError, IndexError):
+        utils_logger.info(f'Could not find date of last article')
         return datetime.strptime('2000-01-01', '%Y-%m-%d')
 
 
@@ -42,7 +46,6 @@ def scrap_new_urls(last_date: datetime) -> list[str]:
     Takes date, scraps and returns urls for articles from https://blog.griddynamics.com,
     that were created after the date, passed as an argument.
     """
-
     return_code = call(["scrapy", "crawl", "urls",
                         "-a", f"last_date={last_date}",
                         "-O", "../url.json"], cwd='tutorial')
@@ -154,7 +157,6 @@ def update_authors(new_articles: list):
                 cwd='tutorial'):
 
         authors = read_json_from_file('authors.json')
-
         new_authors = read_json_from_file('new_authors.json')
         if new_authors:
             authors += new_authors
