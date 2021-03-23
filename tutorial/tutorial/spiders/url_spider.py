@@ -1,7 +1,12 @@
 import scrapy
 from datetime import datetime
+import logging
+
 
 class UrlSpider(scrapy.Spider):
+    """
+    An url scraper for all the available articles in the griddynamics domain.
+    """
     name = "urls"
     start_urls = [
         'https://blog.griddynamics.com/digital-transformation/',
@@ -14,11 +19,13 @@ class UrlSpider(scrapy.Spider):
         'https://blog.griddynamics.com/omnichannel-commerce/'
     ]
 
-    def __init__(self, last_date, **kwargs):
+    def __init__(self, last_date="2020-12-12", **kwargs):
         super().__init__(**kwargs)
         self.last_date = datetime.strptime(last_date[:10], '%Y-%m-%d')
 
     def parse(self, response, **kwargs):
+        loger = logging.getLogger()
+        loger.handlers = []
 
         urls = response.css('.card::attr(href)').getall()
         raw_dates = response.css('.card .author .name::text').getall()
